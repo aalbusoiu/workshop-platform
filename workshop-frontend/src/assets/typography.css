@@ -1,0 +1,75 @@
+@font-face {
+    font-family: "Inter";
+    src: url("fonts/inter/Inter-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Inter";
+    src: url("fonts/inter/Inter-Italic.ttf") format("truetype");
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Inter";
+    src: url("fonts/inter/Inter-SemiBold.ttf") format("truetype");
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Inter";
+    src: url("fonts/inter/Inter-SemiBoldItalic.ttf") format("truetype");
+    font-weight: 600;
+    font-style: italic;
+    font-display: swap;
+}
+@font-face {
+    font-family: "K2D";
+    src: url("fonts/k2d/K2D-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "K2D";
+    src: url("fonts/k2d/K2D-BoldItalic.ttf") format("truetype");
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+}
+:root {
+    --fontSans: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+    --fontDisplay: "K2D", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+    --fs-h1: 48px; --lh-h1: 1.2;
+    --fs-h2: 36px; --lh-h2: 1.3;
+    --fs-h3: 30px; --lh-h3: 1.35;
+    --fs-h4: 24px; --lh-h4: 1.4;
+    --fs-h5: 20px; --lh-h5: 1.5;
+    --fs-h6: 16px; --lh-h6: 1.5;
+    --fs-body: 16px; --lh-body: 1.5;
+    --fs-body-sm: 14px; --lh-body-sm: 1.4;
+    --fs-caption: 12px; --lh-caption: 1.4;
+    --fs-overline: 14px; --lh-overline: 1.4;
+    --fs-button: 16px; --lh-button: 1.3;
+    --fs-smallcaps: 14px; --lh-smallcaps: 1.4;
+}
+html, body {
+    font-family: var(--fontSans), sans-serif;
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+}
+h1, .h1 { font-family: var(--fontDisplay), sans-serif; font-weight: 700; font-size: var(--fs-h1); line-height: var(--lh-h1); }
+h2, .h2 { font-family: var(--fontDisplay), sans-serif; font-weight: 700; font-size: var(--fs-h2); line-height: var(--lh-h2); }
+h3, .h3 { font-family: var(--fontDisplay), sans-serif; font-weight: 700; font-size: var(--fs-h3); line-height: var(--lh-h3); }
+h4, .h4 { font-family: var(--fontDisplay), sans-serif; font-weight: 700; font-size: var(--fs-h4); line-height: var(--lh-h4); }
+h5, .h5 { font-family: var(--fontDisplay), sans-serif; font-weight: 700; font-size: var(--fs-h5); line-height: var(--lh-h5); }
+h6, .h6 { font-family: var(--fontDisplay), sans-serif; font-weight: 700; font-size: var(--fs-h6); line-height: var(--lh-h6); }
+.body { font-family: var(--fontSans), sans-serif; font-weight: 400; font-size: var(--fs-body); line-height: var(--lh-body); }
+.body-sm { font-family: var(--fontSans), sans-serif; font-weight: 400; font-size: var(--fs-body-sm); line-height: var(--lh-body-sm); }
+.caption { font-family: var(--fontSans), sans-serif; font-weight: 400; font-size: var(--fs-caption); line-height: var(--lh-caption); }
+.overline { font-family: var(--fontSans), sans-serif; font-weight: 600; font-size: var(--fs-overline); line-height: var(--lh-overline); text-transform: uppercase; }
+.btn-text { font-family: var(--fontSans), sans-serif; font-weight: 600; font-size: var(--fs-button); line-height: var(--lh-button); }
+.small-caps { font-family: var(--fontDisplay), sans-serif; font-weight: 700; font-size: var(--fs-smallcaps); line-height: var(--lh-smallcaps); text-transform: uppercase; }

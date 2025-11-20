@@ -1,0 +1,28 @@
+name: "Smart PR Base Router"
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  route-pr-base:
+    if: github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: "Change base to 'dev' unless it's a 'Sprint' branch"
+        if: "!startsWith(github.head_ref, 'Sprint')"
+        
+        run: |
+          echo "This PR is targeting main, but is not a Sprint branch."
+          echo "Changing the base branch from 'main' to 'dev'."
+          gh pr edit ${{ github.event.number }} --base dev
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: "Sprint branch targeting main"
+        if: "startsWith(github.head_ref, 'Sprint')"
+        run: |
+          echo "Sprint branch detected."
+          echo "Allowing Pull Request to target 'main' branch."

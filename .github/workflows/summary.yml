@@ -1,0 +1,50 @@
+name: Summarize new issues
+
+on:
+  issues:
+    types: [opened]
+
+concurrency:
+  group: summarize-issue-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  summary:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      models: read
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run AI inference
+        id: inference
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o-mini
+          max-tokens: 320
+          system-prompt: "You are a helpful maintainer bot. Output plain Markdown as 5 short bullets: **Summary**, **Deliverables**, **Acceptance Criteria**, **Scope**, **Meta**. Keep it concise (≤120 words), no preamble, no code blocks, no tables."
+          prompt: |
+            Summarize the GitHub issue for maintainers, aligned with issue format.
+            Extract and condense:
+            - Description / business context
+            - Deliverables
+            - Acceptance Criteria
+            - Scope (in/out)
+            - Meta: Priority, Story Points, Tags/Labels, Links/Dependencies
+            
+            If any items are missing, add a final bullet **Missing:** and list them.
+            Use terse language and repository vocabulary. No preamble.
+            
+            Title: ${{ github.event.issue.title }}
+            Body: ${{ github.event.issue.body }}
+
+      - name: Comment with AI summary
+        run: |
+          gh issue comment "$ISSUE_NUMBER" -F "${{ steps.inference.outputs.response-file }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}

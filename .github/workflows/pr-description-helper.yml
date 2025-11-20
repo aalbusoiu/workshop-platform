@@ -1,0 +1,64 @@
+name: "PR Description Helper"
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  post-diff-comment:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: "Check out code"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "Get truncated diff"
+        id: get_diff
+        run: |
+          MAX=60000
+          git diff ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} > diff_full.txt
+          head -c $MAX diff_full.txt > diff_trunc.txt
+          if [ "$(wc -c < diff_full.txt)" -gt "$MAX" ]; then
+            printf '\n\n... diff truncated due to GitHub comment size limit ...\n' >> diff_trunc.txt
+          fi
+          {
+            echo "diff_content<<EOF"
+            cat diff_trunc.txt
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: "Find existing helper comment"
+        id: find_comment
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '<!-- PR_DESCRIPTION_HELPER -->'
+
+      - name: "Create or update helper comment"
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.find_comment.outputs.comment-id }}
+          body: |
+            <!-- PR_DESCRIPTION_HELPER -->
+            Create a merge request description in markdown for the diff using this template:
+
+            <Title>
+
+            ### Summary
+
+            ### Features
+
+            ### Refactoring
+
+            ### Bugfixes 
+
+            ```diff
+            ${{ steps.get_diff.outputs.diff_content }}
+            ```

@@ -1,0 +1,5 @@
+@import "colors.css";
+@import "typography.css";
+
+html, body, #__nuxt { min-height: 100%; }
+body { margin: 0; background: var(--colorPrimary); color: var(--colorText); }

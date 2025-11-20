@@ -1,0 +1,280 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Enums ----------
+enum UserRole {
+  ADMIN
+  MODERATOR
+  RESEARCHER
+}
+
+enum InvitationStatus {
+  PENDING   
+  CONSUMED  
+  ACCEPTED  
+}
+
+enum RefreshTokenStatus {
+  ACTIVE
+  ROTATED
+  REVOKED
+}
+
+enum SessionStatus {
+  LOBBY
+  RUNNING
+  ENDED
+  ABANDONED
+}
+
+enum RoundStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+}
+
+enum AuditLogType {
+  USER_ROLE_CHANGED
+  SESSION_CREATED
+  SCENARIO_SELECTED
+  
+  INVITATION_CREATED
+  INVITATION_CONSUMED
+  INVITATION_ACCEPTED
+  INVITATION_EXPIRED
+  
+}
+
+// ---------- Models ----------
+
+
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  passwordHash String
+  role         UserRole
+  isDisabled   Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+   
+  // relations
+  sessions     WorkshopSession[] // a user can create many sessions
+  refreshTokens RefreshToken[]
+
+  @@index([role])
+}
+
+model UserInvitation {
+  id          Int              @id @default(autoincrement())
+  email       String           @unique
+  role        UserRole
+  tokenHash   String           @unique
+  status      InvitationStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  createdById Int
+  
+}
+model RefreshToken {
+  id         String              @id @default(cuid())
+  tokenHash  String              @unique
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  status     RefreshTokenStatus  @default(ACTIVE)
+  expiresAt  DateTime
+  revokedAt  DateTime?
+
+  @@index([userId])
+  @@index([status])
+}
+
+
+model WorkshopSession {
+  id              Int             @id @default(autoincrement())
+  code            String          @unique
+  status          SessionStatus   @default(LOBBY)
+  maxParticipants Int             @default(5)
+  createdAt       DateTime        @default(now())
+  
+  createdBy       User            @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdById     Int
+
+  // relations
+  participants    Participant[]
+  rounds          Round[]
+  bmcProfiles     BmcProfile[]   
+  bmcPostRounds   BmcPostRound[] // post-round BMC states
+  
+  @@index([status])
+  @@index([createdAt])
+  @@index([createdById])
+}
+
+model Participant {
+  id            Int              @id @default(autoincrement())
+
+  // membership
+  session       WorkshopSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId     Int
+
+  // UI / presence (non-sensitive)
+  displayName   String?
+  colorHex      String
+  joinedAt      DateTime         @default(now())
+
+  // relations
+  bmcProfile    BmcProfile?
+  tokens        SessionToken[]
+  bmcPostRounds BmcPostRound[] // post-round BMC states
+
+  @@index([sessionId])
+}
+
+
+model SessionToken {
+  id             Int          @id @default(autoincrement())
+  participant    Participant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  participantId  Int
+
+  // store only a hash of the opaque token
+  tokenHash      String       @unique
+
+  issuedAt       DateTime     @default(now())
+  expiresAt      DateTime
+  revokedAt      DateTime?
+
+  @@index([expiresAt])
+  @@index([participantId])
+}
+
+model Scenario {
+  id          Int       @id @default(autoincrement())
+
+  title       String    @db.VarChar(255)
+  description String
+  category    String?   @db.VarChar(100)
+  payload     Json
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  isActive Boolean @default(true)
+
+  rounds      Round[]
+
+  @@index([isActive])
+  @@index([category])
+  @@index([createdAt])
+}
+
+model Round {
+  id          Int              @id @default(autoincrement())
+
+  // belongs to a session and uses a chosen scenario
+  session     WorkshopSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId   Int
+  scenario    Scenario         @relation(fields: [scenarioId], references: [id], onDelete: SetNull)
+  scenarioId  Int
+
+  // order within a session
+  roundNumber Int
+
+  // lifecycle inside the session
+  status      RoundStatus      // PLANNED ("Select Scenario")-> ACTIVE ("Start game/round")-> COMPLETED ("Present round summary")
+  startedAt   DateTime?
+  endedAt     DateTime?
+
+  // results the moderator presents (graphs/metrics), used for summaries/exports
+  summary     Json?
+
+  createdAt   DateTime         @default(now())
+
+  // all post-round BMCs (state 2) for this round
+  postRoundBmcStates BmcPostRound[]
+
+  @@unique([sessionId, roundNumber])
+  @@index([sessionId])
+  @@index([scenarioId])
+}
+
+model BmcPostRound {
+  id            Int              @id @default(autoincrement())
+
+  session       WorkshopSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId     Int
+
+  round         Round            @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  roundId       Int
+
+  participant   Participant?     @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  participantId Int?
+
+  baseProfile   BmcProfile?      @relation(fields: [baseProfileId], references: [id], onDelete: SetNull)
+  baseProfileId Int?
+
+  payload       Json
+  createdAt     DateTime         @default(now())
+
+  // 1 BMCPostRound per participant per round
+  @@unique([roundId, participantId])
+
+  @@index([sessionId])
+  @@index([roundId])
+  @@index([participantId])
+  @@index([createdAt])
+}
+
+
+model BmcProfile {
+  id            Int              @id @default(autoincrement())
+
+  // keep research data tied to the session
+  session       WorkshopSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId     Int
+
+  // optional participant link; becomes NULL when participants are purged in ABANDONED
+  participant   Participant?     @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  participantId Int?             @unique
+
+  payload       Json
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @default(now()) @updatedAt
+  lastActivity  DateTime?        // tracks latest progress change
+
+  // relations
+  basedPostRounds BmcPostRound[] // post-round BMCs that use this as base
+
+  @@index([lastActivity])
+  @@index([sessionId])
+  @@index([createdAt])
+  @@index([updatedAt])
+}
+
+
+model AuditLog {
+  id           Int          @id @default(autoincrement())
+  type         AuditLogType
+  createdAt    DateTime     @default(now())
+
+  actorUserId  Int?         
+  targetUserId Int?         
+
+  sessionId    Int?        
+  scenarioId   Int?         
+  invitationId Int?        
+
+  previousRole UserRole?   
+  newRole      UserRole?  
+
+  @@index([type])
+  @@index([actorUserId])
+  @@index([targetUserId])
+  @@index([sessionId])
+  @@index([scenarioId])
+  @@index([invitationId])
+  @@index([createdAt])
+}

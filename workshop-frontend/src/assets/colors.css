@@ -1,0 +1,17 @@
+:root {
+    --colorPrimary: #13141E;
+    --colorPrimaryVariant: #27293D;
+    --colorAccent: #2A70CB;
+    --colorAccentHover: rgba(42,112,203,0.6);
+    --colorAccentActive: #99C5FF;
+    --colorError: #EA5757;
+    --colorWarn: #EA8A57;
+    --colorPass: #57EA77;
+    --colorPlaceholder: rgba(239,239,244,0.4);
+    --colorText: #F5F5FF;
+    --colorTextSub: #A5A6B8;
+    --colorTextField: #1E1E1E;
+    --colorTextDisabled: #9495A7;
+    --colorShadow: #AAAAAA;
+    --colorOverlay: #161616;
+}
